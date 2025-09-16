@@ -7,9 +7,11 @@ import Home from './pages/Home';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Navbar from './components/Navbar';
+import Toast from './components/Toast';
 
 function App(){
   return <AuthProvider>
+    <Toast />
     <Navbar />
     <div className="container mx-auto p-4">
       <Routes>

@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { register } from '../api/authService';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Signup(){
   const [name,setName]=useState(''); const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
@@ -13,8 +14,11 @@ export default function Signup(){
     try{
       const { data } = await register({ name, email, password });
       setUser(data);
+      toast.success('Account created successfully!');
       nav('/');
-    }catch(err){ alert(err?.response?.data?.message || 'Error'); }
+    }catch(err){ 
+      toast.error(err?.response?.data?.message || 'Failed to create account');
+    }
   }
 
   return (

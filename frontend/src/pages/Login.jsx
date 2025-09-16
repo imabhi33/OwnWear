@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { login } from '../api/authService';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,9 +15,10 @@ export default function Login() {
     try {
       const { data } = await login({ email, password });
       setUser(data);
+      toast.success('Successfully logged in!');
       nav('/');
     } catch (err) {
-      alert(err?.response?.data?.message || 'Error');
+      toast.error(err?.response?.data?.message || 'Login failed');
     }
   };
 
