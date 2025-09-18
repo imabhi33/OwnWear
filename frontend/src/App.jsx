@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Home from './pages/Home';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
 
@@ -19,6 +20,7 @@ function App(){
         <Route path="/login" element={<Login/>} />
         <Route path="/signup" element={<Signup/>} />
         <Route path="/cart" element={<CartPage/>} />
+        <Route path="/profile" element={<Profile/>} />
         <Route path="/admin" element={<AdminDashboard/>} />
         <Route path="*" element={<Navigate to="/" replace/>} />
       </Routes>
