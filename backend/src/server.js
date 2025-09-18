@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +30,7 @@ connectDB(process.env.MONGO_URI || 'mongodb://localhost:27017/mern-e-cart');
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/upload', require('./routes/uploadRoutes'));
 
 const PORT = process.env.PORT || 5000;
