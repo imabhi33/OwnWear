@@ -22,3 +22,27 @@ exports.getAllCarts = async (req, res) => {
   const items = await Cart.find({}).populate('product').populate('user','name email');
   res.json(items);
 }
+
+exports.removeFromCart = async (req, res) => {
+  try {
+    const { cartItemId } = req.params;
+    const cartItem = await Cart.findById(cartItemId);
+
+    if (!cartItem) {
+      return res.status(404).json({ message: 'Cart item not found' });
+    }
+
+    // Ensure the cart item belongs to the user
+    if (cartItem.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to remove this item' });
+    }
+
+    await Cart.findByIdAndDelete(cartItemId);
+    
+    // Return updated cart
+    const updatedCart = await Cart.find({ user: req.user._id }).populate('product');
+    res.json(updatedCart);
+  } catch (error) {
+    res.status(500).json({ message: 'Error removing item from cart', error: error.message });
+  }
+}
