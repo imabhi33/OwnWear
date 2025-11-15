@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +33,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/ai', aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, ()=> console.log('Server running on port', PORT));

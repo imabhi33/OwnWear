@@ -1,9 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faCog, faSignOutAlt, faListAlt, faGift, faSearch } from '@fortawesome/free-solid-svg-icons';
-import '@fortawesome/fontawesome-free/css/all.css';
+import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, BellIcon } from '@heroicons/react/24/solid';
 
 export default function Navbar() {
     const { user, logout } = useContext(AuthContext);
@@ -12,167 +11,216 @@ export default function Navbar() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
-
-    const toggleProfile = () => {
-        setIsProfileOpen(!isProfileOpen);
-    };
-
     const handleLogout = () => {
         logout();
+        setIsProfileOpen(false);
         nav('/login');
-    };
-
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
     };
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        // Perform search logic here (e.g., navigate to a search results page)
-        console.log('Search submitted:', searchQuery);
+        console.log('Search:', searchQuery);
     };
 
     return (
-        <nav className="bg-indigo-400 shadow-md">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-                {/* Logo */}
-                <Link to="/" className="flex items-center">
-                    <img src="/logo.png" alt="OwnWear Logo" className="h-12 w-48 mr-0" /> {/* Increased height, removed text */}
-                </Link>
-
-                {/* Search Bar */}
-                <form onSubmit={handleSearchSubmit} className="flex items-center rounded-md bg-white md:w-1/3">
-                    <div className="flex w-full">
-                        <input
-                            type="text"
-                            placeholder="Search for products..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="w-full py-2 px-3 text-gray-700 focus:outline-none rounded-tl-md rounded-bl-md"
+        <nav className="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100">
+            <div className="container mx-auto px-4">
+                {/* Top Bar */}
+                <div className="flex items-center justify-between py-4">
+                    {/* Logo */}
+                    <Link to="/" className="flex items-center group">
+                        <img 
+                            src="/logo.png" 
+                            alt="OwnWear" 
+                            className="h-10 w-auto transition-transform duration-300 group-hover:scale-105" 
                         />
+                    </Link>
+
+                    {/* Search Bar - Desktop */}
+                    <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-2xl mx-8">
+                        <div className="relative w-full">
+                            <input
+                                type="text"
+                                placeholder="Search for products, brands and more..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-100 transition-all duration-200 outline-none"
+                            />
+                            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                    </form>
+
+                    {/* Right Side Icons */}
+                    <div className="flex items-center space-x-6">
+                        {/* Desktop Navigation */}
+                        <div className="hidden md:flex items-center space-x-6">
+                            {user ? (
+                                <>
+                                    <button className="relative group">
+                                        <HeartIcon className="h-6 w-6 text-gray-600 group-hover:text-red-500 transition-colors duration-200" />
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                                    </button>
+                                    
+                                    <Link to="/cart" className="relative group">
+                                        <ShoppingCartIcon className="h-6 w-6 text-gray-600 group-hover:text-teal-600 transition-colors duration-200" />
+                                        <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                                    </Link>
+
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                            className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors duration-200"
+                                        >
+                                            <UserCircleIcon className="h-7 w-7 text-gray-600" />
+                                            <span className="text-sm font-medium text-gray-700">{user.name?.split(' ')[0]}</span>
+                                        </button>
+
+                                        {isProfileOpen && (
+                                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 animate-fadeInUp">
+                                                <div className="px-4 py-3 border-b border-gray-100">
+                                                    <p className="text-sm font-semibold text-gray-800">{user.name}</p>
+                                                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                                </div>
+                                                <Link
+                                                    to="/profile"
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors duration-150"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                >
+                                                    My Profile
+                                                </Link>
+                                                <Link
+                                                    to="/orders"
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors duration-150"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                >
+                                                    Orders
+                                                </Link>
+                                                <Link
+                                                    to="/wishlist"
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors duration-150"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                >
+                                                    Wishlist
+                                                </Link>
+                                                {user?.role === 'admin' && (
+                                                    <Link
+                                                        to="/admin"
+                                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-teal-50 hover:text-teal-700 transition-colors duration-150"
+                                                        onClick={() => setIsProfileOpen(false)}
+                                                    >
+                                                        Admin Dashboard
+                                                    </Link>
+                                                )}
+                                                <hr className="my-2 border-gray-100" />
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
+                                                >
+                                                    Logout
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <Link
+                                    to="/login"
+                                    className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                                >
+                                    Login
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* Mobile Menu Button */}
                         <button
-                            type="submit"
-                            className="bg-indigo-500 hover:bg-indigo-700 text-white py-2 px-4 rounded-tr-md rounded-br-md focus:outline-none"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="md:hidden text-gray-600 hover:text-teal-600 transition-colors"
                         >
-                            <FontAwesomeIcon icon={faSearch} />
+                            {isMenuOpen ? (
+                                <XMarkIcon className="h-6 w-6" />
+                            ) : (
+                                <Bars3Icon className="h-6 w-6" />
+                            )}
                         </button>
                     </div>
-                </form>
+                </div>
 
-                {/* Mobile Menu Button */}
-                <button
-                    onClick={toggleMenu}
-                    className="md:hidden text-white focus:outline-none"
-                >
-                    <svg
-                        className="h-6 w-6 fill-current"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        {isMenuOpen ? (
-                            <path
-                                fillRule="evenodd"
-                                clipRule="evenodd"
-                                d="M18.278 16.864a1 1 0 0 1-1.414 1.414l-4.829-4.828-4.828 4.828a1 1 0 0 1-1.414-1.414l4.828-4.829-4.828-4.828a1 1 0 0 1 1.414-1.414l4.829 4.828 4.828-4.828a1 1 0 1 1 1.414 1.414l-4.828 4.829 4.828 4.828z"
-                            />
-                        ) : (
-                            <path
-                                fillRule="evenodd"
-                                d="M4 5h16a1 1 0 0 1 0 2H4a1 1 0 1 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 0 1 0-2zm0 6h16a1 1 0 0 1 0 2H4a1 1 0 1 1 0-2z"
-                            />
-                        )}
-                    </svg>
-                </button>
-
-                {/* Navigation Links */}
-                <div
-                    className={`${isMenuOpen ? 'block' : 'hidden'
-                        } md:flex md:items-center space-x-4`}
-                >
-                    <Link
-                        to="/"
-                        className="block md:inline-block text-white hover:text-gray-200 py-2 transition duration-300"
-                    >
-                        Home
-                    </Link>
-                    <Link
-                        to="/cart"
-                        className="block md:inline-block text-white hover:text-gray-200 py-2 transition duration-300"
-                    >
-                        Cart
-                    </Link>
-                    {user?.role === 'admin' && (
-                        <Link
-                            to="/admin"
-                            className="block md:inline-block text-white hover:text-gray-200 py-2 transition duration-300"
-                        >
-                            Admin
-                        </Link>
-                    )}
-
-                    {/* Auth Links / User Info */}
-                    {user ? (
+                {/* Mobile Search */}
+                <div className="md:hidden pb-4">
+                    <form onSubmit={handleSearchSubmit}>
                         <div className="relative">
-                            <button
-                                onClick={toggleProfile}
-                                className="focus:outline-none rounded-full"
-                            >
-                                <FontAwesomeIcon
-                                    icon={faUserCircle}
-                                    className="text-white text-2xl hover:text-gray-200 transition duration-300"
-                                />
-                            </button>
+                            <input
+                                type="text"
+                                placeholder="Search products..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                            />
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-                            {/* Profile Dropdown */}
-                            <div
-                                className={`${isProfileOpen ? 'block' : 'hidden'
-                                    } absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10`}
-                            >
+            {/* Mobile Menu */}
+            {isMenuOpen && (
+                <div className="md:hidden bg-white border-t border-gray-100 animate-fadeInUp">
+                    <div className="container mx-auto px-4 py-4 space-y-3">
+                        <Link
+                            to="/"
+                            className="block py-2 text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            Home
+                        </Link>
+                        {user ? (
+                            <>
+                                <Link
+                                    to="/cart"
+                                    className="block py-2 text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    Cart
+                                </Link>
                                 <Link
                                     to="/profile"
-                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-300"
+                                    className="block py-2 text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                                    onClick={() => setIsMenuOpen(false)}
                                 >
                                     Profile
                                 </Link>
-                                <Link
-                                    to="/settings"
-                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-300"
-                                >
-                                    Settings
-                                </Link>
-                                <Link
-                                    to="/orders"
-                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-300"
-                                >
-                                    Orders
-                                </Link>
-                                <Link
-                                    to="/rewards"
-                                    className="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-300"
-                                >
-                                    Rewards
-                                </Link>
+                                {user?.role === 'admin' && (
+                                    <Link
+                                        to="/admin"
+                                        className="block py-2 text-gray-700 hover:text-teal-600 font-medium transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Admin
+                                    </Link>
+                                )}
                                 <button
-                                    onClick={handleLogout}
-                                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 transition duration-300"
+                                    onClick={() => {
+                                        handleLogout();
+                                        setIsMenuOpen(false);
+                                    }}
+                                    className="block w-full text-left py-2 text-red-600 font-medium"
                                 >
                                     Logout
                                 </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <Link
-                            to="/login"
-                            className="bg-white hover:bg-gray-100 text-indigo-700 font-medium py-1.5 px-3 rounded-md transition duration-300"
-                        >
-                            Login
-                        </Link>
-                    )}
+                            </>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="block py-2 text-teal-600 font-semibold"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                Login
+                            </Link>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </nav>
     );
 }

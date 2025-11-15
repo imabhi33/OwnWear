@@ -3,9 +3,13 @@ import { AuthContext } from '../context/AuthContext';
 import { deleteProduct } from '../api/productService';
 import { toast } from 'sonner';
 import ConfirmModal from './ConfirmModal';
+import { HeartIcon, ShoppingCartIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
-export default function ProductCard({p, onAdd, onDelete}) {
+export default function ProductCard({ p, onAdd, onDelete }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
@@ -20,32 +24,127 @@ export default function ProductCard({p, onAdd, onDelete}) {
     }
   };
 
+  const toggleWishlist = () => {
+    setIsWishlisted(!isWishlisted);
+    toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+  };
+
   return (
     <>
-      <div className="bg-white rounded shadow p-4 hover:shadow-lg transition">
-        <div className="h-48 flex items-center justify-center">
-          <img src={p.imageUrl || '/placeholder.png'} alt={p.title} className="max-h-40"/>
-        </div>
-        <h3 className="font-semibold mt-2">{p.title}</h3>
-        <p className="text-sm text-gray-600">{p.description}</p>
-        <div className="flex justify-between items-center mt-3">
-          <div className="font-bold">₹{p.price}</div>
-          <div className="flex gap-2">
-            <button 
-              onClick={()=>onAdd(p)} 
-              className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
-            >
-              Add
-            </button>
-            {isAdmin && (
-              <button 
-                onClick={() => setShowDeleteModal(true)}
-                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition"
+      <div className="group bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden card-hover">
+        {/* Image Container */}
+        <div className="relative overflow-hidden bg-gray-100 aspect-square">
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-teal-500"></div>
+            </div>
+          )}
+          <img
+            src={p.imageUrl || '/placeholder.png'}
+            alt={p.title}
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+          
+          {/* Overlay Actions */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-4 left-4 right-4 flex gap-2">
+              <button
+                onClick={() => onAdd(p)}
+                className="flex-1 bg-white text-teal-600 font-semibold py-2 px-4 rounded-lg hover:bg-teal-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2"
               >
-                Delete
+                <ShoppingCartIcon className="h-5 w-5" />
+                Add to Cart
               </button>
+              <button
+                onClick={toggleWishlist}
+                className="bg-white p-2 rounded-lg hover:bg-red-50 transition-colors duration-300"
+              >
+                {isWishlisted ? (
+                  <HeartSolidIcon className="h-5 w-5 text-red-500" />
+                ) : (
+                  <HeartIcon className="h-5 w-5 text-gray-600" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Badges */}
+          <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {p.stock < 10 && p.stock > 0 && (
+              <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                Only {p.stock} left
+              </span>
+            )}
+            {p.stock === 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                Out of Stock
+              </span>
             )}
           </div>
+
+          {/* Admin Delete Button */}
+          {isAdmin && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all duration-300 shadow-lg"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Product Info */}
+        <div className="p-4">
+          <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1 group-hover:text-teal-600 transition-colors">
+            {p.title}
+          </h3>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2 h-10">
+            {p.description}
+          </p>
+
+          {/* Price and Rating */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-2xl font-bold text-gray-800">₹{p.price}</span>
+              {p.originalPrice && (
+                <span className="text-sm text-gray-400 line-through ml-2">₹{p.originalPrice}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-yellow-400">★</span>
+              <span className="text-sm font-semibold text-gray-700">4.5</span>
+              <span className="text-xs text-gray-500">(120)</span>
+            </div>
+          </div>
+
+          {/* Size Options */}
+          {p.size && p.size.length > 0 && (
+            <div className="flex gap-2 mb-3">
+              {p.size.slice(0, 4).map((size, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs border border-gray-300 px-2 py-1 rounded hover:border-teal-500 hover:text-teal-600 transition-colors cursor-pointer"
+                >
+                  {size}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Color Indicator */}
+          {p.color && (
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <span>Color:</span>
+              <div className="flex gap-1">
+                <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gradient-to-br from-blue-400 to-blue-600"></div>
+                <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gradient-to-br from-red-400 to-red-600"></div>
+                <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gradient-to-br from-green-400 to-green-600"></div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
