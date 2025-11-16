@@ -1,279 +1,271 @@
-import React, { useState, useContext } from 'react';
-import { createProduct } from '../api/productService';
-import { getAllCarts } from '../api/cartService';
-import { AuthContext } from '../context/AuthContext';
-import { toast } from 'sonner';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloudUploadAlt, faImage, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  ChartBarIcon,
+  UsersIcon,
+  ShoppingBagIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  ArrowRightOnRectangleIcon
+} from '@heroicons/react/24/outline';
 
-export default function AdminDashboard(){
-  const { user } = useContext(AuthContext);
-  const [form, setForm] = useState({ 
-    title:'', 
-    description:'', 
-    price:'', 
-    imageUrl:'',
-    category: 'tshirt',
-    size: ['S', 'M', 'L', 'XL'],
-    color: '',
-    stock: 0
-  });
-  const [carts, setCarts] = useState([]);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+const AdminDashboard = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const handleImageUrlChange = (e) => {
-    const url = e.target.value;
-    setForm({ ...form, imageUrl: url });
-    setImagePreview(url);
-    setImageFile(null);
-  };
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
-  const uploadImage = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    
+  const fetchAnalytics = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + user.token
-        },
-        body: formData
+      const token = localStorage.getItem('adminToken');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const { data } = await axios.get(`${apiUrl}/admin/analytics`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await response.json();
-      return data.imageUrl;
-    } catch (error) {
-      throw new Error('Failed to upload image');
-    }
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      let productData = { ...form };
-      
-      if (imageFile) {
-        const uploadedUrl = await uploadImage(imageFile);
-        productData.imageUrl = uploadedUrl;
-      }
-
-      await createProduct(productData, user.token);
-      toast.success('Product added successfully!');
-      
-      // Reset form
-      setForm({ 
-        title: '', 
-        description: '', 
-        price: '', 
-        imageUrl: '',
-        category: 'tshirt',
-        size: ['S', 'M', 'L', 'XL'],
-        color: '',
-        stock: 0
-      });
-      setImagePreview('');
-      setImageFile(null);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to add product');
-    } finally {
+      setAnalytics(data);
       setLoading(false);
+    } catch (error) {
+      console.error('Error:', error);
+      if (error.response?.status === 401) {
+        navigate('/admin/login');
+      }
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminData');
+    navigate('/admin/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+      </div>
+    );
   }
 
-  const fetchCarts = async ()=>{
-    try{
-      const { data } = await getAllCarts(user.token);
-      setCarts(data);
-      toast.success('Cart data refreshed');
-    }catch(e){ 
-      toast.error('Failed to fetch cart data');
+  const stats = [
+    {
+      name: 'Total Users',
+      value: analytics?.totalUsers || 0,
+      icon: UsersIcon,
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      name: 'Total Products',
+      value: analytics?.totalProducts || 0,
+      icon: ShoppingBagIcon,
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50'
+    },
+    {
+      name: 'Total Orders',
+      value: analytics?.totalOrders || 0,
+      icon: ChartBarIcon,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      name: 'Total Revenue',
+      value: `₹${(analytics?.totalRevenue || 0).toLocaleString()}`,
+      icon: CurrencyDollarIcon,
+      color: 'from-orange-500 to-orange-600',
+      bgColor: 'bg-orange-50'
     }
-  }
+  ];
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
-      {!user ? <div>Please login as admin.</div> : (
-        <div className="grid md:grid-cols-2 gap-6">
-          <form className="bg-white p-6 rounded-lg shadow-lg" onSubmit={submit}>
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">Add New Product</h3>
-            
-            {/* Image Preview Section */}
-            <div className="mb-6">
-              <div className={`border-2 border-dashed rounded-lg p-4 text-center 
-                ${imagePreview ? 'border-green-500' : 'border-gray-300'} 
-                hover:border-indigo-500 transition-colors`}>
-                {imagePreview ? (
-                  <div className="relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="max-h-64 mx-auto rounded-lg shadow-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImagePreview('');
-                        setImageFile(null);
-                        setForm({...form, imageUrl: ''});
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
-                    >
-                      <FontAwesomeIcon icon={faTimes} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="py-8">
-                    <FontAwesomeIcon icon={faCloudUploadAlt} className="text-4xl text-gray-400 mb-2" />
-                    <p className="text-gray-500">Drag and drop or click to upload</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-4 flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-                  <input
-                    type="url"
-                    placeholder="Or paste image URL"
-                    value={form.imageUrl}
-                    onChange={handleImageUrlChange}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Product Details */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                <input 
-                  required 
-                  value={form.title} 
-                  onChange={e=>setForm({...form,title:e.target.value})}
-                  placeholder="Product Title"
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
-                  <input 
-                    required
-                    type="number"
-                    value={form.price} 
-                    onChange={e=>setForm({...form,price:e.target.value})}
-                    placeholder="Price"
-                    min="0"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
-                  <input 
-                    type="number"
-                    value={form.stock} 
-                    onChange={e=>setForm({...form,stock:e.target.value})}
-                    placeholder="Available Stock"
-                    min="0"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select 
-                  value={form.category}
-                  onChange={e=>setForm({...form,category:e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                >
-                  <option value="tshirt">T-Shirt</option>
-                  <option value="shirt">Shirt</option>
-                  <option value="hoodie">Hoodie</option>
-                  <option value="sweater">Sweater</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                <input 
-                  type="text"
-                  value={form.color} 
-                  onChange={e=>setForm({...form,color:e.target.value})}
-                  placeholder="Product Color"
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea 
-                  required
-                  value={form.description} 
-                  onChange={e=>setForm({...form,description:e.target.value})}
-                  placeholder="Product Description"
-                  rows="4"
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-400"
-                />
-              </div>
-
-              <button 
-                type="submit"
-                disabled={loading}
-                className={`w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium
-                  hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 
-                  transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
+              Admin Dashboard
+            </h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="px-4 py-2 text-gray-700 hover:text-teal-600 font-medium transition"
               >
-                {loading ? 'Adding Product...' : 'Add Product'}
+                Users
               </button>
-            </div>
-          </form>
-
-          <div className="bg-white p-4 rounded shadow">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">User Carts</h3>
-              <button className="px-2 py-1 bg-green-600 text-white rounded" onClick={fetchCarts}>Refresh</button>
-            </div>
-            <div className="space-y-2">
-              {carts.map(c=> (
-                <div key={c._id} className="p-2 border rounded">
-                  <div className="font-semibold">{c.user.name} ({c.user.email})</div>
-                  <div>Product: {c.product.title} - Qty: {c.qty}</div>
-                </div>
-              ))}
+              <button
+                onClick={() => navigate('/admin/products')}
+                className="px-4 py-2 text-gray-700 hover:text-teal-600 font-medium transition"
+              >
+                Products
+              </button>
+              <button
+                onClick={() => navigate('/admin/orders')}
+                className="px-4 py-2 text-gray-700 hover:text-teal-600 font-medium transition"
+              >
+                Orders
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                Logout
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat) => (
+            <div key={stat.name} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">{stat.name}</p>
+                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                </div>
+                <div className={`p-3 rounded-lg bg-gradient-to-br ${stat.color}`}>
+                  <stat.icon className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Recent Orders</h2>
+            <button
+              onClick={() => navigate('/admin/orders')}
+              className="text-teal-600 hover:text-teal-700 font-medium"
+            >
+              View All →
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Order ID</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Customer</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analytics?.recentOrders && analytics.recentOrders.length > 0 ? (
+                  analytics.recentOrders.slice(0, 5).map((order) => (
+                    <tr key={order._id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm text-gray-900">#{order._id.slice(-8)}</td>
+                      <td className="py-3 px-4 text-sm text-gray-900">{order.user?.name || 'N/A'}</td>
+                      <td className="py-3 px-4 text-sm font-semibold text-gray-900">₹{order.totalAmount}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="py-8 text-center text-gray-500">
+                      No orders yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Recent Users & Products */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Users */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Recent Users</h2>
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="text-teal-600 hover:text-teal-700 font-medium"
+              >
+                View All →
+              </button>
+            </div>
+            <div className="space-y-3">
+              {analytics?.recentUsers && analytics.recentUsers.length > 0 ? (
+                analytics.recentUsers.slice(0, 5).map((user) => (
+                  <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{user.name || user.firstName + ' ' + user.lastName}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No users yet
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Products */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Recent Products</h2>
+              <button
+                onClick={() => navigate('/admin/products')}
+                className="text-teal-600 hover:text-teal-700 font-medium"
+              >
+                View All →
+              </button>
+            </div>
+            <div className="space-y-3">
+              {analytics?.recentProducts && analytics.recentProducts.length > 0 ? (
+                analytics.recentProducts.slice(0, 5).map((product) => (
+                  <div key={product._id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <img
+                      src={product.images?.[0] || '/placeholder.png'}
+                      alt={product.title}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 text-sm">{product.title}</p>
+                      <p className="text-sm text-gray-600">₹{product.price}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No products yet
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default AdminDashboard;

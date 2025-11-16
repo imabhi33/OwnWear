@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { getMyCart, removeFromCart } from '../api/cartService';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { ShoppingBagIcon, TrashIcon, ArrowRightIcon, TagIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
 export default function CartPage() {
     const { user } = useContext(AuthContext);
+    const { refreshCounts } = useCart();
     const [items, setItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [couponCode, setCouponCode] = useState('');
@@ -20,7 +22,14 @@ export default function CartPage() {
         try {
             setIsLoading(true);
             const { data } = await getMyCart(user.token);
-            setItems(data);
+            
+            // Filter out items with null/invalid products
+            const validItems = data.filter(item => item.product && item.product._id);
+            if (validItems.length < data.length) {
+                toast.error('Some items are no longer available and were removed');
+            }
+            
+            setItems(validItems);
         } catch (e) {
             console.error(e);
             toast.error('Failed to fetch cart items');
@@ -33,6 +42,7 @@ export default function CartPage() {
         try {
             await removeFromCart(cartItemId, user.token);
             await fetchCart();
+            refreshCounts(); // Refresh cart count
             toast.success('Item removed from cart');
         } catch (error) {
             console.error('Error removing item:', error);
@@ -40,7 +50,12 @@ export default function CartPage() {
         }
     };
 
-    const subtotal = items.reduce((total, item) => total + (item.product.price * item.qty), 0);
+    const subtotal = items.reduce((total, item) => {
+        if (item.product && item.product.price) {
+            return total + (item.product.price * item.qty);
+        }
+        return total;
+    }, 0);
     const shipping = subtotal > 500 ? 0 : 50;
     const discount = 0;
     const total = subtotal + shipping - discount;
@@ -109,7 +124,7 @@ export default function CartPage() {
                                     <div className="flex gap-6">
                                         <div className="flex-shrink-0">
                                             <img
-                                                src={item.product.image || '/placeholder.png'}
+                                                src={item.product.imageUrl || '/placeholder.png'}
                                                 alt={item.product.title}
                                                 className="w-32 h-32 object-cover rounded-lg"
                                             />
@@ -185,10 +200,13 @@ export default function CartPage() {
                                     <span className="text-lg font-bold text-gray-800">Total</span>
                                     <span className="text-2xl font-bold text-teal-600">₹{total}</span>
                                 </div>
-                                <button className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
+                                <Link
+                                    to="/checkout"
+                                    className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+                                >
                                     Proceed to Checkout
                                     <ArrowRightIcon className="h-5 w-5" />
-                                </button>
+                                </Link>
                                 {subtotal < 500 && (
                                     <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg">
                                         <p className="text-sm text-teal-700">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as profileService from '../api/profileService';
 import { toast } from 'sonner';
+import { UserCircleIcon, CameraIcon, PencilIcon, MapPinIcon, PhoneIcon, EnvelopeIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 function Profile() {
   const { user } = useAuth();
@@ -74,7 +75,7 @@ function Profile() {
       const response = await profileService.updateProfile(formData);
       setProfile(response.data);
       setIsEditing(false);
-      toast.success('Profile updated successfully');
+      toast.success('Profile updated successfully! ✨');
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error(error.response?.data?.message || 'Failed to update profile');
@@ -93,7 +94,7 @@ function Profile() {
     try {
       const response = await profileService.uploadProfilePic(formData);
       setProfile(response.data);
-      toast.success('Profile picture updated successfully');
+      toast.success('Profile picture updated! 📸');
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       toast.error('Failed to update profile picture');
@@ -114,7 +115,7 @@ function Profile() {
         isDefault: false,
       });
       setShowAddressForm(false);
-      toast.success('Address added successfully');
+      toast.success('Address added successfully! 📍');
     } catch (error) {
       console.error('Error adding address:', error);
       toast.error('Failed to add address');
@@ -125,7 +126,7 @@ function Profile() {
     try {
       const response = await profileService.deleteAddress(addressId);
       setProfile(prev => ({ ...prev, addresses: response.data }));
-      toast.success('Address deleted successfully');
+      toast.success('Address deleted');
     } catch (error) {
       console.error('Error deleting address:', error);
       toast.error('Failed to delete address');
@@ -135,317 +136,364 @@ function Profile() {
   if (isLoading && !profile) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-primary border-opacity-75"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-teal-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto shadow-lg rounded-lg overflow-hidden">
-        {/* Profile Header */}
-        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <img
-                  src={profile?.profilePic || '/placeholder.png'}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"
-                />
-                <label className="absolute bottom-0 right-0 bg-white text-purple-500 p-1 rounded-full cursor-pointer hover:bg-gray-100">
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleProfilePicChange}
-                  />
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </label>
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold">{profile?.firstName} {profile?.lastName}</h2>
-                <p className="text-gray-200">{user?.email}</p>
-              </div>
-            </div>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="bg-white text-purple-600 px-4 py-2 rounded-md hover:bg-purple-100 transition-colors font-medium shadow-sm"
-              >
-                Edit Profile
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Profile Form */}
-        <div className="p-6 bg-white rounded-b-lg">
-          {isEditing ? (
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="mobile" className="block text-sm font-medium text-gray-700">Mobile</label>
-                  <input
-                    type="tel"
-                    id="mobile"
-                    name="mobile"
-                    value={formData.mobile}
-                    onChange={handleInputChange}
-                    pattern="[0-9]{10}"
-                    title="Please enter a valid 10-digit mobile number"
-                    className="mt-1 block w-full px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Gender</label>
-                  <select
-                    id="gender"
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">Date of Birth</label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    max={new Date().toISOString().split('T')[0]}
-                    className="mt-1 block w-full px-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-5">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:bg-indigo-300 disabled:cursor-not-allowed"
-                  disabled={isLoading}
-                >
-                  {isLoading ? <><div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> Saving...</> : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-500 font-medium">First Name</label>
-                <p className="mt-1 text-lg font-semibold text-gray-800">{profile?.firstName || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 font-medium">Last Name</label>
-                <p className="mt-1 text-lg font-semibold text-gray-800">{profile?.lastName || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 font-medium">Mobile</label>
-                <p className="mt-1 text-lg font-semibold text-gray-800">{profile?.mobile || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 font-medium">Gender</label>
-                <p className="mt-1 text-lg font-semibold text-gray-800 capitalize">{profile?.gender || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-500 font-medium">Date of Birth</label>
-                <p className="mt-1 text-lg font-semibold text-gray-800">
-                  {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : '-'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Addresses Section */}
-      <div className="mt-6 max-w-4xl mx-auto shadow-lg rounded-lg overflow-hidden">
-        <div className="bg-white p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Addresses</h3>
-            <button
-              onClick={() => setShowAddressForm(true)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-            >
-              Add New Address
-            </button>
-          </div>
-
-          {showAddressForm && (
-            <form onSubmit={handleAddressSubmit} className="mb-6 p-4 border rounded-lg bg-gray-50">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="type" className="block text-sm font-medium text-gray-700">Type</label>
-                  <select
-                    id="type"
-                    name="type"
-                    value={newAddress.type}
-                    onChange={handleAddressInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  >
-                    <option value="home">Home</option>
-                    <option value="work">Work</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street</label>
-                  <input
-                    type="text"
-                    id="street"
-                    name="street"
-                    value={newAddress.street}
-                    onChange={handleAddressInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={newAddress.city}
-                    onChange={handleAddressInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">State</label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    value={newAddress.state}
-                    onChange={handleAddressInputChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="pincode" className="block text-sm font-medium text-gray-700">Pincode</label>
-                  <input
-                    type="text"
-                    id="pincode"
-                    name="pincode"
-                    value={newAddress.pincode}
-                    onChange={handleAddressInputChange}
-                    pattern="[0-9]{6}"
-                    title="Please enter a valid 6-digit pincode"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
-                    required
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isDefault"
-                    name="isDefault"
-                    checked={newAddress.isDefault}
-                    onChange={handleAddressInputChange}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
-                    Set as default address
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddressForm(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-                >
-                  Add Address
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="space-y-4">
-            {profile?.addresses?.map((address) => (
-              <div key={address._id} className="border rounded-lg p-4 bg-white shadow-sm">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 capitalize">
-                      {address.type}
-                    </span>
-                    {address.isDefault && (
-                      <span className="ml-2 inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        Default
-                      </span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-teal-50 py-6 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 animate-fadeInUp">
+          <div className="h-32 bg-gradient-to-r from-teal-500 via-teal-600 to-blue-600"></div>
+          <div className="px-8 pb-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16">
+              <div className="flex flex-col md:flex-row md:items-end gap-6">
+                {/* Profile Picture */}
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-2xl border-4 border-white shadow-xl overflow-hidden bg-gray-100">
+                    {profile?.profilePic ? (
+                      <img
+                        src={profile.profilePic}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-teal-400 to-teal-600">
+                        <UserCircleIcon className="w-20 h-20 text-white" />
+                      </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDeleteAddress(address._id)}
-                    className="text-red-600 hover:text-red-800 focus:outline-none"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <label className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-teal-50 transition-colors group">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleProfilePicChange}
+                    />
+                    <CameraIcon className="w-5 h-5 text-teal-600" />
+                  </label>
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-700">{address.street}</p>
-                  <p className="text-sm text-gray-700">{address.city}, {address.state}</p>
-                  <p className="text-sm text-gray-700">PIN: {address.pincode}</p>
+
+                {/* User Info */}
+                <div className="mb-4">
+                  <h1 className="text-3xl font-bold text-gray-800 mb-1">
+                    {profile?.firstName} {profile?.lastName}
+                  </h1>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <EnvelopeIcon className="w-4 h-4" />
+                      {user?.email}
+                    </div>
+                    {profile?.mobile && (
+                      <div className="flex items-center gap-1">
+                        <PhoneIcon className="w-4 h-4" />
+                        {profile.mobile}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
+
+              {/* Edit Button */}
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="mt-4 md:mt-0 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2"
+                >
+                  <PencilIcon className="w-5 h-5" />
+                  Edit Profile
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Profile Details */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Personal Information */}
+            <div className="bg-white rounded-2xl shadow-lg p-8 animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
+              
+              {isEditing ? (
+                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Mobile</label>
+                      <input
+                        type="tel"
+                        name="mobile"
+                        value={formData.mobile}
+                        onChange={handleInputChange}
+                        pattern="[0-9]{10}"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                        required
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Date of Birth</label>
+                      <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                    >
+                      {isLoading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">First Name</p>
+                    <p className="text-lg font-semibold text-gray-800">{profile?.firstName || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Last Name</p>
+                    <p className="text-lg font-semibold text-gray-800">{profile?.lastName || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Mobile</p>
+                    <p className="text-lg font-semibold text-gray-800">{profile?.mobile || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Gender</p>
+                    <p className="text-lg font-semibold text-gray-800 capitalize">{profile?.gender || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Date of Birth</p>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : '-'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Addresses */}
+            <div className="bg-white rounded-2xl shadow-lg p-8 animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Saved Addresses</h2>
+                <button
+                  onClick={() => setShowAddressForm(!showAddressForm)}
+                  className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  {showAddressForm ? 'Cancel' : '+ Add New'}
+                </button>
+              </div>
+
+              {showAddressForm && (
+                <form onSubmit={handleAddressSubmit} className="mb-6 p-6 bg-teal-50 rounded-xl border-2 border-teal-200">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Address Type</label>
+                      <select
+                        name="type"
+                        value={newAddress.type}
+                        onChange={handleAddressInputChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+                        required
+                      >
+                        <option value="home">Home</option>
+                        <option value="work">Work</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Street Address</label>
+                      <input
+                        type="text"
+                        name="street"
+                        value={newAddress.street}
+                        onChange={handleAddressInputChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={newAddress.city}
+                        onChange={handleAddressInputChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={newAddress.state}
+                        onChange={handleAddressInputChange}
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pincode</label>
+                      <input
+                        type="text"
+                        name="pincode"
+                        value={newAddress.pincode}
+                        onChange={handleAddressInputChange}
+                        pattern="[0-9]{6}"
+                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-teal-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="isDefault"
+                        checked={newAddress.isDefault}
+                        onChange={handleAddressInputChange}
+                        className="w-4 h-4 text-teal-600 rounded"
+                      />
+                      <label className="ml-2 text-sm text-gray-700">Set as default</label>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="mt-4 w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                  >
+                    Save Address
+                  </button>
+                </form>
+              )}
+
+              <div className="space-y-4">
+                {profile?.addresses?.length > 0 ? (
+                  profile.addresses.map((address) => (
+                    <div key={address._id} className="p-6 border-2 border-gray-200 rounded-xl hover:border-teal-300 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-3 py-1 bg-teal-100 text-teal-700 text-sm font-semibold rounded-full capitalize">
+                              {address.type}
+                            </span>
+                            {address.isDefault && (
+                              <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-800 font-medium">{address.street}</p>
+                          <p className="text-gray-600">{address.city}, {address.state} - {address.pincode}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteAddress(address._id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <MapPinIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <p>No saved addresses yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Account Stats</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-teal-50 rounded-lg">
+                  <span className="text-gray-700">Total Orders</span>
+                  <span className="text-2xl font-bold text-teal-600">0</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-coral-50 rounded-lg">
+                  <span className="text-gray-700">Wishlist Items</span>
+                  <span className="text-2xl font-bold text-coral-500">0</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                  <span className="text-gray-700">Saved Addresses</span>
+                  <span className="text-2xl font-bold text-blue-600">{profile?.addresses?.length || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Member Since */}
+            <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+              <CalendarIcon className="w-8 h-8 mb-3" />
+              <h3 className="text-lg font-semibold mb-2">Member Since</h3>
+              <p className="text-2xl font-bold">
+                {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -20,7 +20,9 @@ const userSchema = new mongoose.Schema({
   profilePic: { type: String },
   addresses: [addressSchema],
   gender: { type: String, enum: ['male', 'female', 'other'] },
-  dateOfBirth: { type: Date }
+  dateOfBirth: { type: Date },
+  resetPasswordToken: { type: String },
+  resetPasswordExpire: { type: Date }
 }, { timestamps: true });
 
 // hash password

@@ -1,12 +1,15 @@
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { HeartIcon, BellIcon } from '@heroicons/react/24/solid';
 
 export default function Navbar() {
     const { user, logout } = useContext(AuthContext);
+    const { cartCount, wishlistCount } = useCart();
     const nav = useNavigate();
+    const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -19,7 +22,19 @@ export default function Navbar() {
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        console.log('Search:', searchQuery);
+        const trimmedQuery = searchQuery.trim();
+        if (trimmedQuery) {
+            navigate(`/?search=${encodeURIComponent(trimmedQuery)}`);
+        } else {
+            // If search is empty, navigate to home without search param
+            navigate('/');
+            setSearchQuery('');
+        }
+    };
+
+    const handleLogoClick = () => {
+        setSearchQuery('');
+        navigate('/');
     };
 
     return (
@@ -28,25 +43,39 @@ export default function Navbar() {
                 {/* Top Bar */}
                 <div className="flex items-center justify-between py-4">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center group">
+                    <div onClick={handleLogoClick} className="flex items-center group cursor-pointer">
                         <img 
                             src="/logo.png" 
                             alt="OwnWear" 
                             className="h-10 w-auto transition-transform duration-300 group-hover:scale-105" 
                         />
-                    </Link>
+                    </div>
 
                     {/* Search Bar - Desktop */}
                     <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-2xl mx-8">
                         <div className="relative w-full">
                             <input
                                 type="text"
-                                placeholder="Search for products, brands and more..."
+                                placeholder="Search for t-shirts, hoodies, brands and more..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-100 transition-all duration-200 outline-none"
                             />
-                            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <button type="submit" className="absolute left-4 top-1/2 -translate-y-1/2">
+                                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 hover:text-teal-600 transition-colors" />
+                            </button>
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        navigate('/');
+                                    }}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <XMarkIcon className="h-5 w-5" />
+                                </button>
+                            )}
                         </div>
                     </form>
 
@@ -54,16 +83,35 @@ export default function Navbar() {
                     <div className="flex items-center space-x-6">
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center space-x-6">
+                            {/* Custom Creator Button */}
+                            <Link
+                                to="/design-studio"
+                                className="flex items-center gap-2 bg-gradient-to-r from-coral-400 to-coral-500 hover:from-coral-500 hover:to-coral-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                </svg>
+                                Custom Creator
+                            </Link>
+
                             {user ? (
                                 <>
-                                    <button className="relative group">
+                                    <Link to="/wishlist" className="relative group">
                                         <HeartIcon className="h-6 w-6 text-gray-600 group-hover:text-red-500 transition-colors duration-200" />
-                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
-                                    </button>
+                                        {wishlistCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                                                {wishlistCount > 9 ? '9+' : wishlistCount}
+                                            </span>
+                                        )}
+                                    </Link>
                                     
                                     <Link to="/cart" className="relative group">
                                         <ShoppingCartIcon className="h-6 w-6 text-gray-600 group-hover:text-teal-600 transition-colors duration-200" />
-                                        <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                                        {cartCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                                                {cartCount > 9 ? '9+' : cartCount}
+                                            </span>
+                                        )}
                                     </Link>
 
                                     <div className="relative">
@@ -152,12 +200,26 @@ export default function Navbar() {
                         <div className="relative">
                             <input
                                 type="text"
-                                placeholder="Search products..."
+                                placeholder="Search t-shirts, hoodies..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
+                                className="w-full pl-10 pr-10 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all outline-none"
                             />
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                            <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
+                                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                            </button>
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        navigate('/');
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                >
+                                    <XMarkIcon className="h-4 w-4" />
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>

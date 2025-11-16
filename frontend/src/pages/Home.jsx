@@ -3,6 +3,8 @@ import { getProducts } from '../api/productService';
 import { addToCart } from '../api/cartService';
 import ProductCard from '../components/ProductCard';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { toast } from 'sonner';
 import { SparklesIcon, TruckIcon, ShieldCheckIcon, CreditCardIcon } from '@heroicons/react/24/outline';
@@ -10,25 +12,50 @@ import { SparklesIcon, TruckIcon, ShieldCheckIcon, CreditCardIcon } from '@heroi
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0
+  });
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   const { user } = useContext(AuthContext);
+  const { refreshCounts } = useCart();
+  const navigate = useNavigate();
 
   const handleDelete = (deletedId) => {
     setProducts(prev => prev.filter(p => p._id !== deletedId));
   };
 
   useEffect(() => {
-    fetchProducts();
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
-    socket.on('productAdded', (p) => setProducts(prev => [p, ...prev]));
+    fetchProducts(1, selectedCategory, searchQuery);
+  }, [selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const socket = io(socketUrl);
+    socket.on('productAdded', () => fetchProducts(pagination.currentPage, selectedCategory, searchQuery));
     socket.on('productDeleted', (id) => handleDelete(id));
     return () => socket.disconnect();
-  }, []);
+  }, [pagination.currentPage, selectedCategory, searchQuery]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = 1, category = 'all', search = '') => {
     try {
       setLoading(true);
-      const { data } = await getProducts();
-      setProducts(data);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '12',
+        ...(category !== 'all' && { category }),
+        ...(search && { search })
+      });
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/products?${params}`);
+      const data = await response.json();
+      
+      setProducts(data.products);
+      setPagination(data.pagination);
     } catch (e) {
       toast.error('Failed to fetch products');
       console.error(e);
@@ -36,6 +63,18 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const handlePageChange = (newPage) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetchProducts(newPage, selectedCategory, searchQuery);
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  };
+
+
 
   const handleAdd = async (p) => {
     if (!user) {
@@ -45,8 +84,25 @@ export default function Home() {
     try {
       await addToCart({ productId: p._id, qty: 1 }, user.token);
       toast.success(`${p.title} added to cart! 🛒`);
+      refreshCounts(); // Refresh cart count
     } catch (e) {
       toast.error('Failed to add item to cart');
+    }
+  };
+
+  const handleBuyNow = async (p) => {
+    if (!user) {
+      toast.error('Please login to buy');
+      navigate('/login');
+      return;
+    }
+    try {
+      // Add to cart first
+      await addToCart({ productId: p._id, qty: 1 }, user.token);
+      // Navigate to checkout
+      navigate('/checkout');
+    } catch (e) {
+      toast.error('Failed to proceed to checkout');
     }
   };
 
@@ -69,12 +125,12 @@ export default function Home() {
                 Discover premium quality t-shirts that match your personality. Comfort meets fashion.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button className="bg-white text-teal-600 font-semibold px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                <a href="#products" className="bg-white text-teal-600 font-semibold px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
                   Shop Now
-                </button>
-                <button className="border-2 border-white text-white font-semibold px-8 py-4 rounded-lg hover:bg-white hover:text-teal-600 transition-all duration-300">
+                </a>
+                <a href="#products" className="border-2 border-white text-white font-semibold px-8 py-4 rounded-lg hover:bg-white hover:text-teal-600 transition-all duration-300">
                   View Collection
-                </button>
+                </a>
               </div>
             </div>
             <div className="hidden md:block animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
@@ -128,22 +184,47 @@ export default function Home() {
       </div>
 
       {/* Products Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Trending Products</h2>
-            <p className="text-gray-600">Discover our latest collection</p>
+      <div id="products" className="container mx-auto px-4 py-12">
+        {/* Header with Filters */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                {searchQuery ? `Search Results for "${searchQuery}"` : 'Our Collection'}
+              </h2>
+              <p className="text-gray-600">
+                {searchQuery && pagination.totalProducts > 0 ? (
+                  <span>Found <strong>{pagination.totalProducts}</strong> products</span>
+                ) : searchQuery && pagination.totalProducts === 0 ? (
+                  <span className="text-red-600">No results found</span>
+                ) : (
+                  <span>{pagination.totalProducts} products available</span>
+                )}
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button className="px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
-              All
-            </button>
-            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
-              T-Shirts
-            </button>
-            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
-              Hoodies
-            </button>
+
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-3">
+            {[
+              { id: 'all', name: 'All Products', icon: '🛍️' },
+              { id: 'tshirt', name: 'T-Shirts', icon: '👕' },
+              { id: 'shirt', name: 'Shirts', icon: '👔' },
+              { id: 'hoodie', name: 'Hoodies', icon: '🧥' }
+            ].map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handleCategoryChange(category.id)}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${
+                  selectedCategory === category.id
+                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-teal-300 hover:shadow-md'
+                }`}
+              >
+                <span className="text-xl">{category.icon}</span>
+                {category.name}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -159,8 +240,25 @@ export default function Home() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
               <SparklesIcon className="h-10 w-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No products yet</h3>
-            <p className="text-gray-600">Check back soon for new arrivals!</p>
+            {searchQuery ? (
+              <>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found for "{searchQuery}"</h3>
+                <p className="text-gray-600 mb-4">Try searching with different keywords or browse all products</p>
+                <button
+                  onClick={() => {
+                    window.location.href = '/';
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                >
+                  View All Products
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No products yet</h3>
+                <p className="text-gray-600">Check back soon for new arrivals!</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -170,9 +268,62 @@ export default function Home() {
                 className="animate-fadeInUp"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <ProductCard p={p} onAdd={handleAdd} onDelete={handleDelete} />
+                <ProductCard p={p} onAdd={handleAdd} onDelete={handleDelete} onBuyNow={handleBuyNow} />
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && products.length > 0 && pagination.totalPages > 1 && (
+          <div className="mt-12 flex justify-center items-center gap-2">
+            <button
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              disabled={!pagination.hasPrevPage}
+              className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            
+            <div className="flex gap-2">
+              {[...Array(pagination.totalPages)].map((_, index) => {
+                const pageNum = index + 1;
+                // Show first page, last page, current page, and pages around current
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= pagination.currentPage - 1 && pageNum <= pagination.currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        pagination.currentPage === pageNum
+                          ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg'
+                          : 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                } else if (
+                  pageNum === pagination.currentPage - 2 ||
+                  pageNum === pagination.currentPage + 2
+                ) {
+                  return <span key={pageNum} className="px-2 text-gray-400">...</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              disabled={!pagination.hasNextPage}
+              className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>
