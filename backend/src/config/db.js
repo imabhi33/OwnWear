@@ -11,3 +11,4 @@ const connectDB = async (mongoURI) => {
 };
 
 module.exports = connectDB;
+
