@@ -5,3 +5,4 @@ const generateToken = (user, jwtSecret, expiresIn='30d')=>{
 }
 
 module.exports = generateToken;
+
